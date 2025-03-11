@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Question App</title>
+    <link href="styles.css" rel="stylesheet">
+</head>
+
+<body>
+    <h1>Question App</h1>
+    <label for="questionCategory">Select Category:</label>
+    <select id="questionCategory"></select>
+    <button onclick="fetchQuestion()">Get Question</button>
+    <div id="question"></div>
+
+    <script>
+        function fetchCategories()
+        {
+            fetch('http://localhost:3000/categories')
+                .then(response => response.json())
+                .then(data =>
+                {
+                    const categoryDropdown = document.getElementById('questionCategory');
+                    data.forEach(category =>
+                    {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        categoryDropdown.appendChild(option);
+                    });
+                });
+        }
+
+        function fetchQuestion()
+        {
+            const category = document.getElementById('questionCategory').value;
+            fetch(`http://localhost:3000/question/${category}`)
+                .then(response => response.json())
+                .then(data =>
+                {
+                    const questionDiv = document.getElementById('question');
+                    questionDiv.innerHTML = `<h3>${data[0].question}</h3>`;
+                    data[0].answers.forEach(answer =>
+                    {
+                        const button = document.createElement('button');
+                        button.textContent = answer;
+                        button.onclick = () => alert(answer === data[0].correctAnswer ? 'Correct!' : 'Wrong!');
+                        questionDiv.appendChild(button);
+                    });
+                });
+        }
+
+        window.onload = fetchCategories;
+    </script>
+</body>
+
+</html>

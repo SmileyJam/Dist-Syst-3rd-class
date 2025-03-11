@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  question-service:
+    build:
+      context: ./question-service
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    depends_on:
+      - mongo
+
+  submit-service:
+    build:
+      context: ./submit-service
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongodb-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
