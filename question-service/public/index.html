@@ -21,7 +21,11 @@
                 .then(response => response.json())
                 .then(data =>
                 {
+                    console.log(data); // Debug: Check if categories are fetched correctly
+
                     const categoryDropdown = document.getElementById('questionCategory');
+                    categoryDropdown.innerHTML = ''; // Clear previous options
+
                     data.forEach(category =>
                     {
                         const option = document.createElement('option');
@@ -29,28 +33,37 @@
                         option.textContent = category;
                         categoryDropdown.appendChild(option);
                     });
-                });
+                })
+                .catch(error => console.error('Error fetching categories:', error));
         }
 
         function fetchQuestion()
         {
             const category = document.getElementById('questionCategory').value;
+
             fetch(`http://localhost:3000/question/${category}`)
                 .then(response => response.json())
                 .then(data =>
                 {
                     const questionDiv = document.getElementById('question');
-                    questionDiv.innerHTML = `<h3>${data[0].question}</h3>`;
-                    data[0].answers.forEach(answer =>
+                    questionDiv.innerHTML = ''; // Clear previous content
+
+                    // Display the question
+                    const questionElement = document.createElement('h3');
+                    questionElement.textContent = data.question; // Use data.question directly
+                    questionDiv.appendChild(questionElement);
+
+                    // Display the answers
+                    data.answers.forEach(answer =>
                     {
                         const button = document.createElement('button');
                         button.textContent = answer;
-                        button.onclick = () => alert(answer === data[0].correctAnswer ? 'Correct!' : 'Wrong!');
+                        button.onclick = () => alert(answer === data.correctAnswer ? 'Correct!' : 'Wrong!');
                         questionDiv.appendChild(button);
                     });
-                });
+                })
+                .catch(error => console.error('Error fetching question:', error));
         }
-
         window.onload = fetchCategories;
     </script>
 </body>

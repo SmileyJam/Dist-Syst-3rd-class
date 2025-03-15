@@ -1,15 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
 const PORT = 4000;
 
 // Middleware
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect('mongodb://mongo:27017/quizdb', { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connected to MongoDB'))
+mongoose.connect('mongodb://mongo:27017/quizdb-mongo', { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Connected to MongoDB for Submit Service'))
     .catch(err => console.error('MongoDB connection error:', err));
 
 // Define Mongoose schema and model
@@ -21,12 +23,12 @@ const questionSchema = new mongoose.Schema({
 });
 const Question = mongoose.model('Question', questionSchema);
 
-// Endpoint to fetch categories
+// Fetch all unique categories
 app.get('/categories', async (req, res) =>
 {
     try
     {
-        const categories = await Question.distinct('category'); // Get unique categories
+        const categories = await Question.distinct('category');
         res.json(categories);
     } catch (error)
     {
@@ -34,7 +36,7 @@ app.get('/categories', async (req, res) =>
     }
 });
 
-// Endpoint to submit a new question
+// Submit a new question
 app.post('/submit', async (req, res) =>
 {
     const { question, answers, correctAnswer, category, newCategory } = req.body;
@@ -55,6 +57,12 @@ app.post('/submit', async (req, res) =>
     {
         res.status(500).json({ error: 'Failed to submit question' });
     }
+});
+
+// Serve the submit.html file
+app.get('/', (req, res) =>
+{
+    res.sendFile(path.join(__dirname, 'public', 'submit.html'));
 });
 
 // Start the server
