@@ -9,10 +9,26 @@ const PORT = 4000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect('mongodb://mongo:27017/quizdb-mongo', { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connected to MongoDB for Submit Service'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// Retry MongoDB connection
+const connectWithRetry = async () =>
+{
+    try
+    {
+        await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+        console.log('Connected to MongoDB for Submit Service');
+    } catch (err)
+    {
+        console.error('MongoDB connection error:', err);
+        console.log('Retrying connection in 5 seconds...');
+        setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
+    }
+};
+
+// Initialize the connection
+connectWithRetry();
 
 // Define Mongoose schema and model
 const questionSchema = new mongoose.Schema({

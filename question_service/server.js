@@ -14,7 +14,10 @@ const connectWithRetry = async () =>
 {
     try
     {
-        await mongoose.connect('mongodb://mongo:27017/quizdb-mongo', { useNewUrlParser: true, useUnifiedTopology: true });
+        mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        })
         console.log('Connected to MongoDB for Question Service');
     } catch (err)
     {

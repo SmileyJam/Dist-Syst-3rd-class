@@ -1,37 +1,44 @@
 services:
-  mongo:
+  mongodb:
     image: mongo:latest
-    container_name: quizdb-mongo
+    container_name: my_mongo_db
+    restart: always
+    ports:
+      - "27017:27017"
     volumes:
-      - ./database:/docker-entrypoint-initdb.d
+      - mongodb_data:/data/db
+      - ./database/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
+    environment:
+      MONGO_INITDB_DATABASE: quiz_db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
     networks:
       - app-network
-    restart: always
 
-  question-service:
+  question_service:
     build:
-      context: ./question-service
-    container_name: question-service
+      context: ./question_service
+    container_name: question_service
     ports:
       - "3000:3000"
     networks:
       - app-network
     depends_on:
-      - mongo
+      - mongodb
 
-  submit-service:
+  submit_service:
     build:
-      context: ./submit-service
-    container_name: submit-service
+      context: ./submit_service
+    container_name: submit_service
     ports:
       - "4000:4000"
     networks:
       - app-network
     depends_on:
-      - mongo
+      - mongodb
 
 volumes:
-  mongodb-data:
+  mongodb_data:
     driver: local
 
 networks:

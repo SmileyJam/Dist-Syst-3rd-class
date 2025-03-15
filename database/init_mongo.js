@@ -1,7 +1,10 @@
-db = connect("mongodb://mongo:27017/quizdb-mongo");
+db = connect("mongodb://admin:password@localhost:27017/admin");
 
-// Example questions
-const exampleQuestions = [
+db = db.getSiblingDB('quiz_db');
+
+db.createCollection('questions');
+
+db.questions.insertMany([
     {
         question: "What is the capital of France?",
         answers: ["Paris", "London", "Berlin", "Madrid"],
@@ -26,18 +29,4 @@ const exampleQuestions = [
         correctAnswer: "H2O",
         category: "Science"
     }
-];
-
-// Insert questions only if they don't already exist
-exampleQuestions.forEach(question =>
-{
-    const exists = db.questions.findOne({ question: question.question });
-    if (!exists)
-    {
-        db.questions.insertOne(question);
-        print(`Inserted question: ${question.question}`);
-    } else
-    {
-        print(`Question already exists: ${question.question}`);
-    }
-});
+]);
