@@ -43,9 +43,23 @@ button:hover
     background-color: #104e8b;
 }
 
-#jokes
-{
-    margin-top: 20px;
+#answers div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.answer {
+    flex: 1;
+}
+
+.correct-checkbox {
+    width: 16px;
+    height: 16px;
 }
 
 table

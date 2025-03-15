@@ -1,5 +1,5 @@
 # Base image
-FROM node:16
+FROM node:18
 
 # Set working directory
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies efficiently
+RUN npm ci --only=production
 
 # Copy application files
 COPY . .

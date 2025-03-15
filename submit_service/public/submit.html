@@ -12,27 +12,44 @@
     <form id="submitForm" onsubmit="submitQuestion(event)">
         <label for="questionText">Question:</label>
         <input id="questionText" type="text" required>
-        <label for="answers">Answers (Correct first):</label>
-        <input id="answer1" type="text" required>
-        <input id="answer2" type="text" required>
-        <input id="answer3" type="text" required>
-        <input id="answer4" type="text" required>
+
+        <label>Answers:</label>
+        <div id="answers">
+            <div>
+                <input type="text" class="answer" required>
+                <label><input type="checkbox" class="correct-checkbox"> Correct</label>
+            </div>
+            <div>
+                <input type="text" class="answer" required>
+                <label><input type="checkbox" class="correct-checkbox"> Correct</label>
+            </div>
+            <div>
+                <input type="text" class="answer" required>
+                <label><input type="checkbox" class="correct-checkbox"> Correct</label>
+            </div>
+            <div>
+                <input type="text" class="answer" required>
+                <label><input type="checkbox" class="correct-checkbox"> Correct</label>
+            </div>
+        </div>
+
         <label for="category">Category:</label>
         <select id="category"></select>
-        <label for="newCategory">New Category:</label>
+        <label for="newCategory">New Category (optional):</label>
         <input id="newCategory" type="text">
+
         <button type="submit">Submit</button>
     </form>
 
-<script>
-    function fetchCategories()
-    {
-        fetch('http://localhost:4000/categories')
-            .then(response => response.json())
-            .then(data =>
+    <script>
+        async function fetchCategories()
+        {
+            try
             {
+                const response = await fetch('http://localhost:4000/categories');
+                const data = await response.json();
                 const categoryDropdown = document.getElementById('category');
-                categoryDropdown.innerHTML = ''; // Clear existing options
+                categoryDropdown.innerHTML = '<option value="">Select a category</option>';
 
                 data.forEach(category =>
                 {
@@ -41,42 +58,52 @@
                     option.textContent = category;
                     categoryDropdown.appendChild(option);
                 });
-            })
-            .catch(error => console.error('Error fetching categories:', error));
-    }
-
-    function submitQuestion(event)
-    {
-        event.preventDefault();
-
-        const question = document.getElementById('questionText').value;
-        const answers = [
-            document.getElementById('answer1').value,
-            document.getElementById('answer2').value,
-            document.getElementById('answer3').value,
-            document.getElementById('answer4').value
-        ];
-        const correctAnswer = document.getElementById('answer1').value; // Assume the first input is the correct answer
-        const category = document.getElementById('category').value;
-        const newCategory = document.getElementById('newCategory').value;
-
-        fetch('http://localhost:4000/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question, answers, correctAnswer, category, newCategory })
-        })
-            .then(response => response.json())
-            .then(data =>
+            } catch (error)
             {
-                alert(data.message || 'Question submitted successfully!');
-                document.getElementById('submitForm').reset(); // Clear the form after submission
-            })
-            .catch(error => console.error('Error submitting question:', error));
-    }
+                console.error('Error fetching categories:', error);
+            }
+        }
 
-    // Populate categories on page load
-    window.onload = fetchCategories;
-</script>
+        function submitQuestion(event)
+        {
+            event.preventDefault();
+
+            const question = document.getElementById('questionText').value;
+            const answerInputs = document.querySelectorAll('.answer');
+            const correctCheckboxes = document.querySelectorAll('.correct-checkbox');
+
+            const answers = Array.from(answerInputs).map((input, index) => ({
+                text: input.value,
+                isCorrect: correctCheckboxes[index].checked
+            }));
+
+            const correctCount = answers.filter(ans => ans.isCorrect).length;
+            if (correctCount !== 1)
+            {
+                alert('Please select exactly one correct answer.');
+                return;
+            }
+
+            const category = document.getElementById('category').value;
+            const newCategory = document.getElementById('newCategory').value.trim();
+
+            fetch('http://localhost:4000/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, answers, category, newCategory })
+            })
+                .then(response => response.json())
+                .then(data =>
+                {
+                    alert(data.message || 'Question submitted successfully!');
+                    document.getElementById('submitForm').reset();
+                })
+                .catch(error => console.error('Error submitting question:', error));
+        }
+
+        // Populate categories on page load
+        window.onload = fetchCategories;
+    </script>
 </body>
 
 </html>

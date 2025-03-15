@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 const PORT = 4000;
@@ -18,12 +20,12 @@ const connectWithRetry = async () =>
             useNewUrlParser: true,
             useUnifiedTopology: true
         });
-        console.log('Connected to MongoDB for Submit Service');
+        console.log('✅ Connected to MongoDB for Submit Service');
     } catch (err)
     {
-        console.error('MongoDB connection error:', err);
-        console.log('Retrying connection in 5 seconds...');
-        setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
+        console.error('❌ MongoDB connection error:', err);
+        console.log('🔄 Retrying connection in 5 seconds...');
+        setTimeout(connectWithRetry, 5000);
     }
 };
 
@@ -32,14 +34,50 @@ connectWithRetry();
 
 // Define Mongoose schema and model
 const questionSchema = new mongoose.Schema({
-    question: String,
-    answers: [String],
-    correctAnswer: String,
-    category: String
+    question: { type: String, required: true },
+    answers: [
+        {
+            text: { type: String, required: true },
+            isCorrect: { type: Boolean, required: true }
+        }
+    ],
+    category: { type: String, required: true }
 });
+
 const Question = mongoose.model('Question', questionSchema);
 
-// Fetch all unique categories
+// Swagger Documentation
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Quiz API - Submit Service",
+            version: "1.0.0",
+            description: "API for submitting quiz questions and retrieving categories",
+        },
+        servers: [{ url: "http://localhost:4000", description: "Local server" }]
+    },
+    apis: ["./server.js"]
+};
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Get all unique categories
+ *     tags: [Submit Service]
+ *     responses:
+ *       200:
+ *         description: A list of unique categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ */
 app.get('/categories', async (req, res) =>
 {
     try
@@ -48,30 +86,106 @@ app.get('/categories', async (req, res) =>
         res.json(categories);
     } catch (error)
     {
+        console.error("❌ Failed to fetch categories:", error);
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
 });
 
-// Submit a new question
+/**
+ * @swagger
+ * /submit:
+ *   post:
+ *     summary: Submit a new quiz question
+ *     tags: [Submit Service]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *               answers:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     text:
+ *                       type: string
+ *                     isCorrect:
+ *                       type: boolean
+ *               category:
+ *                 type: string
+ *               newCategory:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successfully submitted question
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
 app.post('/submit', async (req, res) =>
 {
-    const { question, answers, correctAnswer, category, newCategory } = req.body;
+    const { question, answers, category, newCategory } = req.body;
 
-    if (!question || !answers || answers.length !== 4 || !correctAnswer || (!category && !newCategory))
+    console.log("📩 Incoming Submission:", { question, answers, category, newCategory });
+
+    // Validate inputs
+    if (!question || !answers || answers.length !== 4 || (!category && !newCategory))
     {
-        return res.status(400).json({ error: 'All fields are required.' });
+        console.log("❌ Validation Failed: Missing required fields.");
+        return res.status(400).json({ error: 'All fields are required and exactly 4 answers must be provided.' });
     }
 
-    const chosenCategory = newCategory || category;
+    // Ensure exactly one correct answer
+    const correctAnswerCount = answers.filter(ans => ans.isCorrect).length;
+    if (correctAnswerCount !== 1)
+    {
+        console.log("❌ Validation Failed: There must be exactly one correct answer.");
+        return res.status(400).json({ error: 'Please select exactly one correct answer.' });
+    }
+
+    // Ensure answers remain as objects (text + isCorrect) and not strings
+    const formattedAnswers = answers.map(ans => ({
+        text: ans.text,
+        isCorrect: ans.isCorrect
+    }));
+
+    const chosenCategory = newCategory.trim() !== '' ? newCategory : category;
+
+    console.log("📝 Prepared for DB Save:", { question, formattedAnswers, category: chosenCategory });
 
     try
     {
-        const newQuestion = new Question({ question, answers, correctAnswer, category: chosenCategory });
-        await newQuestion.save();
-        res.json({ message: 'Question submitted successfully!' });
+        // Prevent duplicate categories
+        if (newCategory)
+        {
+            const existingCategories = await Question.distinct('category');
+            if (existingCategories.includes(newCategory))
+            {
+                console.log("⚠️ Category already exists. Using existing category.");
+            }
+        }
+
+        const newQuestion = new Question({
+            question,
+            answers: formattedAnswers,
+            category: chosenCategory
+        });
+
+        // Save to database
+        const savedQuestion = await newQuestion.save();
+        console.log("✅ Successfully Saved to DB:", savedQuestion);
+
+        res.json({ message: '✅ Question submitted successfully!', savedQuestion });
+
     } catch (error)
     {
-        res.status(500).json({ error: 'Failed to submit question' });
+        console.error("❌ Database Error:", error);
+        res.status(500).json({ error: '❌ Failed to submit question' });
     }
 });
 
@@ -84,5 +198,5 @@ app.get('/', (req, res) =>
 // Start the server
 app.listen(PORT, () =>
 {
-    console.log(`Submit Service running at http://localhost:${PORT}`);
+    console.log(`🚀 Submit Service running at http://localhost:${PORT}`);
 });
