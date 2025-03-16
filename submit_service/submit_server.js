@@ -5,31 +5,23 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
-const PORT = 4000;
+const PORT = 3200;
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Retry MongoDB connection
-const connectWithRetry = async () =>
-{
-    try
-    {
-        await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
+const connectWithRetry = async () => {
+    try {
+        await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin');
         console.log('✅ Connected to MongoDB for Submit Service');
-    } catch (err)
-    {
+    } catch (err) {
         console.error('❌ MongoDB connection error:', err);
         console.log('🔄 Retrying connection in 5 seconds...');
         setTimeout(connectWithRetry, 5000);
     }
 };
 
-// Initialize the connection
 connectWithRetry();
 
 // Define Mongoose schema and model
@@ -55,9 +47,9 @@ const swaggerOptions = {
             version: "1.0.0",
             description: "API for submitting quiz questions and retrieving categories",
         },
-        servers: [{ url: "http://localhost:4000", description: "Local server" }]
+        servers: [{ url: "http://localhost:3200", description: "Local server" }]
     },
-    apis: ["./server.js"]
+    apis: ["./submit_server.js"]
 };
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));

@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3200
 
 # Start the server
-CMD ["node", "server.js"]
+CMD ["node", "submit_server.js"]

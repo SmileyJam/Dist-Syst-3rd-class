@@ -11,25 +11,17 @@ const PORT = 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Retry MongoDB connection
-const connectWithRetry = async () =>
-{
-    try
-    {
-        await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
+const connectWithRetry = async () => {
+    try {
+        await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin');
         console.log('✅ Connected to MongoDB for Question Service');
-    } catch (err)
-    {
+    } catch (err) {
         console.error('❌ MongoDB connection error:', err);
         console.log('🔄 Retrying connection in 5 seconds...');
         setTimeout(connectWithRetry, 5000);
     }
 };
 
-// Initialize the connection
 connectWithRetry();
 
 // Define Mongoose schema and model
@@ -56,7 +48,7 @@ const swaggerOptions = {
         },
         servers: [{ url: "http://localhost:3000", description: "Local server" }]
     },
-    apis: ["./server.js"]
+    apis: ["./question_server.js"]
 };
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
@@ -77,14 +69,11 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
  *               items:
  *                 type: string
  */
-app.get('/categories', async (req, res) =>
-{
-    try
-    {
+app.get('/categories', async (req, res) => {
+    try {
         const categories = await Question.distinct('category');
         res.json(categories);
-    } catch (error)
-    {
+    } catch (error) {
         console.error("❌ Failed to fetch categories:", error);
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
@@ -134,21 +123,18 @@ app.get('/categories', async (req, res) =>
  *       500:
  *         description: Internal server error
  */
-app.get('/question/:category', async (req, res) =>
-{
+app.get('/question/:category', async (req, res) => {
     const { category } = req.params;
     const count = parseInt(req.query.count) || 1;
 
-    try
-    {
+    try {
         // Fetch random questions from the specified category
         const questions = await Question.aggregate([
             { $match: { category } },
             { $sample: { size: count } }
         ]);
 
-        if (questions.length === 0)
-        {
+        if (questions.length === 0) {
             return res.status(404).json({ error: 'No questions found for this category' });
         }
 
@@ -168,21 +154,18 @@ app.get('/question/:category', async (req, res) =>
 
         res.json(formattedQuestions);
 
-    } catch (error)
-    {
+    } catch (error) {
         console.error("❌ Failed to fetch random questions:", error);
         res.status(500).json({ error: 'Failed to fetch random questions' });
     }
 });
 
 // Serve the index.html file
-app.get('/', (req, res) =>
-{
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start the server
-app.listen(PORT, () =>
-{
+app.listen(PORT, () => {
     console.log(`🚀 Question Service running at http://localhost:${PORT}`);
 });
