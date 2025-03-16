@@ -58,7 +58,32 @@
                     {
                         const button = document.createElement('button');
                         button.textContent = answer;
-                        button.onclick = () => alert(answer === data.correctAnswer ? 'Correct!' : 'Wrong!');
+                        button.onclick = () =>
+                        {
+                            if (answer === data.correctAnswer)
+                            {
+                                button.style.backgroundColor = 'green';
+                            }
+                            else
+                            {
+                                button.style.backgroundColor = 'red';
+                            }
+
+                            // Disable all buttons after an answer is selected
+                            const buttons = questionDiv.querySelectorAll('button');
+                            buttons.forEach(btn =>
+                            {
+                                btn.disabled = true;
+                                if (btn.textContent === data.correctAnswer)
+                                {
+                                    btn.style.backgroundColor = 'green';
+                                }
+                                else if (btn !== button)
+                                {
+                                    btn.style.backgroundColor = 'red';
+                                }
+                            });
+                        };
                         questionDiv.appendChild(button);
                     });
                 })
