@@ -94,7 +94,7 @@ app.get('/categories', async (req, res) =>
  * @swagger
  * /question/{category}:
  *   get:
- *     summary: Get a random quiz question by category
+ *     summary: Get random quiz questions by category
  *     tags: [Question Service]
  *     parameters:
  *       - in: path
@@ -103,27 +103,32 @@ app.get('/categories', async (req, res) =>
  *         schema:
  *           type: string
  *         description: The category of the question
+ *       - in: query
+ *         name: count
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: The number of questions to return
  *     responses:
  *       200:
- *         description: A random quiz question
+ *         description: A list of random quiz questions
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 question:
- *                   type: string
- *                 answers:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       text:
- *                         type: string
- *                 correctAnswer:
- *                   type: string
- *                 category:
- *                   type: string
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   question:
+ *                     type: string
+ *                   answers:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   correctAnswer:
+ *                     type: string
+ *                   category:
+ *                     type: string
  *       404:
  *         description: No questions found for this category
  *       500:
@@ -132,13 +137,14 @@ app.get('/categories', async (req, res) =>
 app.get('/question/:category', async (req, res) =>
 {
     const { category } = req.params;
+    const count = parseInt(req.query.count) || 1;
 
     try
     {
-        // Fetch one random question from the specified category
+        // Fetch random questions from the specified category
         const questions = await Question.aggregate([
             { $match: { category } },
-            { $sample: { size: 1 } }
+            { $sample: { size: count } }
         ]);
 
         if (questions.length === 0)
@@ -147,21 +153,25 @@ app.get('/question/:category', async (req, res) =>
         }
 
         // Ensure answers are shuffled while keeping track of correct answer
-        const shuffledAnswers = questions[0].answers
-            .map(answer => ({ ...answer }))
-            .sort(() => Math.random() - 0.5);
+        const formattedQuestions = questions.map(question => {
+            const shuffledAnswers = question.answers
+                .map(answer => ({ ...answer }))
+                .sort(() => Math.random() - 0.5);
 
-        res.json({
-            question: questions[0].question,
-            answers: shuffledAnswers.map(ans => ans.text), // Send only answer text for UI
-            correctAnswer: shuffledAnswers.find(ans => ans.isCorrect)?.text, // Find correct answer
-            category: questions[0].category
+            return {
+                question: question.question,
+                answers: shuffledAnswers.map(ans => ans.text), // Send only answer text for UI
+                correctAnswer: shuffledAnswers.find(ans => ans.isCorrect)?.text, // Find correct answer
+                category: question.category
+            };
         });
+
+        res.json(formattedQuestions);
 
     } catch (error)
     {
-        console.error("❌ Failed to fetch a random question:", error);
-        res.status(500).json({ error: 'Failed to fetch a random question' });
+        console.error("❌ Failed to fetch random questions:", error);
+        res.status(500).json({ error: 'Failed to fetch random questions' });
     }
 });
 
