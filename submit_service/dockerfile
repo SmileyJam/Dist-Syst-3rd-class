@@ -1,5 +1,5 @@
 # Base image
-FROM node:18
+FROM node:16
 
 # Set working directory
 WORKDIR /app
@@ -7,14 +7,14 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies efficiently
-RUN npm ci --only=production
+# Install dependencies
+RUN npm install
 
 # Copy application files
 COPY . .
 
 # Expose the port
-EXPOSE 4000
+EXPOSE 3200
 
 # Start the server
 CMD ["node", "server.js"]

@@ -4,7 +4,7 @@ services:
     container_name: my_mongo_db
     restart: always
     ports:
-      - "27017:27017"
+      - "4002:27017"
     volumes:
       - mongodb_data:/data/db
       - ./database/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
@@ -12,7 +12,6 @@ services:
       MONGO_INITDB_DATABASE: quiz_db
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
-    command: ["mongod", "--quiet", "--logpath", "/dev/null"] # Disable logging
     networks:
       - app-network
 
@@ -21,7 +20,7 @@ services:
       context: ./question_service
     container_name: question_service
     ports:
-      - "3000:3000"
+      - "4000:3000"
     networks:
       - app-network
     depends_on:
@@ -32,7 +31,7 @@ services:
       context: ./submit_service
     container_name: submit_service
     ports:
-      - "4000:4000"
+      - "4200:3200"
     networks:
       - app-network
     depends_on:
