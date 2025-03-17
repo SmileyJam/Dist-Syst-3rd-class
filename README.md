@@ -1,5 +1,3 @@
-Collecting workspace information# Project README
-
 ## Overview
 
 This project consists of multiple services that work together to provide a quiz application. The services are containerized using Docker and managed with Docker Compose. Below is an explanation of each container and its role in the application.
@@ -76,7 +74,3 @@ The project uses the following dependencies:
 - `mongoose`: MongoDB object modeling tool.
 - `swagger-ui-express`: Middleware to serve Swagger UI.
 - `swagger-jsdoc`: Generates Swagger documentation from JSDoc comments.
-
-## License
-
-This project is licensed under the ISC License. See the LICENSE file for details.
