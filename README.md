@@ -74,3 +74,7 @@ The project uses the following dependencies:
 - `mongoose`: MongoDB object modeling tool.
 - `swagger-ui-express`: Middleware to serve Swagger UI.
 - `swagger-jsdoc`: Generates Swagger documentation from JSDoc comments.
+
+## To Deploy on a VM using the '3rd Class' Main Branch
+
+Copy the `/database` folder and the `docker-compose.yaml` file to the VM. Run the `docker-compose.yaml` with `docker compose up`

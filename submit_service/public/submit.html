@@ -46,7 +46,8 @@
         {
             try
             {
-                const response = await fetch('http://localhost:4200/categories'); // Updated port number
+                const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
+                const response = await fetch(`${baseUrl}/categories`);
                 const data = await response.json();
                 const categoryDropdown = document.getElementById('category');
                 categoryDropdown.innerHTML = '<option value="">Select a category</option>';
@@ -87,7 +88,8 @@
             const category = document.getElementById('category').value;
             const newCategory = document.getElementById('newCategory').value.trim();
 
-            fetch('http://localhost:4200/submit', { // Updated port number
+            const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
+            fetch(`${baseUrl}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question, answers, category, newCategory })

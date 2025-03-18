@@ -17,7 +17,8 @@
     <script>
         function fetchCategories()
         {
-            fetch('http://localhost:4000/categories') // Updated port number
+            const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
+            fetch(`${baseUrl}/categories`)
                 .then(response => response.json())
                 .then(data =>
                 {
@@ -40,8 +41,9 @@
         function fetchQuestion()
         {
             const category = document.getElementById('questionCategory').value;
+            const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
 
-            fetch(`http://localhost:4000/question/${category}?count=1`) // Updated port number
+            fetch(`${baseUrl}/question/${category}?count=1`)
                 .then(response => response.json())
                 .then(data =>
                 {
@@ -65,8 +67,7 @@
                                 if (answer === questionData.correctAnswer)
                                 {
                                     button.style.backgroundColor = 'green';
-                                }
-                                else
+                                } else
                                 {
                                     button.style.backgroundColor = 'red';
                                 }
@@ -79,8 +80,7 @@
                                     if (btn.textContent === questionData.correctAnswer)
                                     {
                                         btn.style.backgroundColor = 'green';
-                                    }
-                                    else if (btn !== button)
+                                    } else if (btn !== button)
                                     {
                                         btn.style.backgroundColor = 'red';
                                     }
@@ -92,6 +92,7 @@
                 })
                 .catch(error => console.error('Error fetching question:', error));
         }
+
         window.onload = fetchCategories;
     </script>
 </body>

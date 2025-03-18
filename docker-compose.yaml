@@ -16,7 +16,11 @@ services:
       - app-network
 
   question_service:
-    image: smileyjam/question_service:latest3rd
+    # Uncomment the following lines to build the container locally
+    #build:
+       #context: ./question_service
+       #dockerfile: Dockerfile
+    image: smileyjam/question_service:3rdClass
     container_name: question_service
     ports:
       - "4000:3000"
@@ -26,7 +30,11 @@ services:
       - mongodb
 
   submit_service:
-    image: smileyjam/submit_service:latest3rd
+    # Uncomment the following lines to build the container locally
+    #build:
+     #  context: ./submit_service
+      # dockerfile: Dockerfile
+    image: smileyjam/submit_service:3rdClass
     container_name: submit_service
     ports:
       - "4200:3200"
