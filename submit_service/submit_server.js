@@ -14,10 +14,10 @@ app.use(express.json());
 const connectWithRetry = async () => {
     try {
         await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin');
-        console.log('✅ Connected to MongoDB for Submit Service');
+        console.log('Connected to MongoDB for Submit Service');
     } catch (err) {
-        console.error('❌ MongoDB connection error:', err);
-        console.log('🔄 Retrying connection in 5 seconds...');
+        console.error('MongoDB connection error:', err);
+        console.log('Retrying connection in 5 seconds...');
         setTimeout(connectWithRetry, 5000);
     }
 };
@@ -78,7 +78,7 @@ app.get('/categories', async (req, res) =>
         res.json(categories);
     } catch (error)
     {
-        console.error("❌ Failed to fetch categories:", error);
+        console.error("Failed to fetch categories:", error);
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
 });
@@ -123,12 +123,12 @@ app.post('/submit', async (req, res) =>
 {
     const { question, answers, category, newCategory } = req.body;
 
-    console.log("📩 Incoming Submission:", { question, answers, category, newCategory });
+    console.log("Incoming Submission:", { question, answers, category, newCategory });
 
     // Validate inputs
     if (!question || !answers || answers.length !== 4 || (!category && !newCategory))
     {
-        console.log("❌ Validation Failed: Missing required fields.");
+        console.log("Validation Failed: Missing required fields.");
         return res.status(400).json({ error: 'All fields are required and exactly 4 answers must be provided.' });
     }
 
@@ -136,7 +136,7 @@ app.post('/submit', async (req, res) =>
     const correctAnswerCount = answers.filter(ans => ans.isCorrect).length;
     if (correctAnswerCount !== 1)
     {
-        console.log("❌ Validation Failed: There must be exactly one correct answer.");
+        console.log("Validation Failed: There must be exactly one correct answer.");
         return res.status(400).json({ error: 'Please select exactly one correct answer.' });
     }
 
@@ -148,7 +148,7 @@ app.post('/submit', async (req, res) =>
 
     const chosenCategory = newCategory.trim() !== '' ? newCategory : category;
 
-    console.log("📝 Prepared for DB Save:", { question, formattedAnswers, category: chosenCategory });
+    console.log("Prepared for DB Save:", { question, formattedAnswers, category: chosenCategory });
 
     try
     {
@@ -158,7 +158,7 @@ app.post('/submit', async (req, res) =>
             const existingCategories = await Question.distinct('category');
             if (existingCategories.includes(newCategory))
             {
-                console.log("⚠️ Category already exists. Using existing category.");
+                console.log("Category already exists. Using existing category.");
             }
         }
 
@@ -170,14 +170,14 @@ app.post('/submit', async (req, res) =>
 
         // Save to database
         const savedQuestion = await newQuestion.save();
-        console.log("✅ Successfully Saved to DB:", savedQuestion);
+        console.log("Successfully Saved to DB:", savedQuestion);
 
-        res.json({ message: '✅ Question submitted successfully!', savedQuestion });
+        res.json({ message: 'Question submitted successfully!', savedQuestion });
 
     } catch (error)
     {
-        console.error("❌ Database Error:", error);
-        res.status(500).json({ error: '❌ Failed to submit question' });
+        console.error("Database Error:", error);
+        res.status(500).json({ error: 'Failed to submit question' });
     }
 });
 
@@ -190,5 +190,5 @@ app.get('/', (req, res) =>
 // Start the server
 app.listen(PORT, () =>
 {
-    console.log(`🚀 Submit Service running at http://localhost:${PORT}`);
+    console.log(`Submit Service running at http://localhost:${PORT}`);
 });
