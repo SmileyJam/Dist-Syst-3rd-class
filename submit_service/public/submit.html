@@ -4,17 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Submit Question</title>
+    <!-- Link to external stylesheet -->
     <link href="styles.css" rel="stylesheet">
 </head>
 
 <body>
     <h1>Submit a Question</h1>
+    <!-- Form for submitting a question -->
     <form id="submitForm" onsubmit="submitQuestion(event)">
+        <!-- Input for the question text -->
         <label for="questionText">Question:</label>
         <input id="questionText" type="text" required>
 
+        <!-- Section for answers -->
         <label>Answers:</label>
         <div id="answers">
+            <!-- Each answer has a text input and a checkbox to mark it as correct -->
             <div>
                 <input type="text" class="answer" required>
                 <label><input type="checkbox" class="correct-checkbox"> Correct</label>
@@ -33,25 +38,30 @@
             </div>
         </div>
 
+        <!-- Dropdown for selecting a category -->
         <label for="category">Category:</label>
         <select id="category"></select>
+        <!-- Optional input for adding a new category -->
         <label for="newCategory">New Category (optional):</label>
         <input id="newCategory" type="text">
 
+        <!-- Submit button -->
         <button type="submit">Submit</button>
     </form>
 
     <script>
+        // Function to fetch categories from the server and populate the dropdown
         async function fetchCategories()
         {
             try
             {
                 const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
-                const response = await fetch(`${baseUrl}/categories`);
-                const data = await response.json();
+                const response = await fetch(`${baseUrl}/categories`); // Fetch categories
+                const data = await response.json(); // Parse JSON response
                 const categoryDropdown = document.getElementById('category');
-                categoryDropdown.innerHTML = '<option value="">Select a category</option>';
+                categoryDropdown.innerHTML = '<option value="">Select a category</option>'; // Default option
 
+                // Add each category as an option in the dropdown
                 data.forEach(category =>
                 {
                     const option = document.createElement('option');
@@ -61,23 +71,28 @@
                 });
             } catch (error)
             {
-                console.error('Error fetching categories:', error);
+                console.error('Error fetching categories:', error); // Log errors
             }
         }
 
+        // Function to handle form submission
         function submitQuestion(event)
         {
-            event.preventDefault();
+            event.preventDefault(); // Prevent default form submission behavior
 
+            // Get the question text
             const question = document.getElementById('questionText').value;
+            // Get all answer inputs and their corresponding checkboxes
             const answerInputs = document.querySelectorAll('.answer');
             const correctCheckboxes = document.querySelectorAll('.correct-checkbox');
 
+            // Map answers into an array of objects with text and isCorrect properties
             const answers = Array.from(answerInputs).map((input, index) => ({
                 text: input.value,
                 isCorrect: correctCheckboxes[index].checked
             }));
 
+            // Ensure exactly one correct answer is selected
             const correctCount = answers.filter(ans => ans.isCorrect).length;
             if (correctCount !== 1)
             {
@@ -85,25 +100,28 @@
                 return;
             }
 
+            // Get the selected category and optional new category
             const category = document.getElementById('category').value;
             const newCategory = document.getElementById('newCategory').value.trim();
 
+            // Submit the question to the server
             const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
             fetch(`${baseUrl}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, answers, category, newCategory })
+                body: JSON.stringify({ question, answers, category, newCategory }) // Send data as JSON
             })
-                .then(response => response.json())
+                .then(response => response.json()) // Parse JSON response
                 .then(data =>
                 {
+                    // Show success message and reset the form
                     alert(data.message || 'Question submitted successfully!');
                     document.getElementById('submitForm').reset();
                 })
-                .catch(error => console.error('Error submitting question:', error));
+                .catch(error => console.error('Error submitting question:', error)); // Log errors
         }
 
-        // Populate categories on page load
+        // Populate categories when the page loads
         window.onload = fetchCategories;
     </script>
 </body>

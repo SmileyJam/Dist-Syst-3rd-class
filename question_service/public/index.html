@@ -4,22 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Question App</title>
+    <!-- Link to the external stylesheet -->
     <link href="styles.css" rel="stylesheet">
 </head>
 
 <body>
     <h1>Question App</h1>
+    <!-- Dropdown for selecting a category -->
     <label for="questionCategory">Select Category:</label>
     <select id="questionCategory"></select>
+    <!-- Button to fetch a question -->
     <button onclick="fetchQuestion()">Get Question</button>
+    <!-- Div to display the fetched question -->
     <div id="question"></div>
 
     <script>
+        /**
+         * Fetches the list of categories from the server and populates the dropdown.
+         */
         function fetchCategories()
         {
             const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
             fetch(`${baseUrl}/categories`)
-                .then(response => response.json())
+                .then(response => response.json()) // Parse the JSON response
                 .then(data =>
                 {
                     console.log(data); // Debug: Check if categories are fetched correctly
@@ -27,6 +34,7 @@
                     const categoryDropdown = document.getElementById('questionCategory');
                     categoryDropdown.innerHTML = ''; // Clear previous options
 
+                    // Populate the dropdown with categories
                     data.forEach(category =>
                     {
                         const option = document.createElement('option');
@@ -35,21 +43,25 @@
                         categoryDropdown.appendChild(option);
                     });
                 })
-                .catch(error => console.error('Error fetching categories:', error));
+                .catch(error => console.error('Error fetching categories:', error)); // Log errors
         }
 
+        /**
+         * Fetches a question based on the selected category and displays it.
+         */
         function fetchQuestion()
         {
-            const category = document.getElementById('questionCategory').value;
+            const category = document.getElementById('questionCategory').value; // Get selected category
             const baseUrl = `${window.location.origin}`; // Dynamically get the base URL
 
             fetch(`${baseUrl}/question/${category}?count=1`)
-                .then(response => response.json())
+                .then(response => response.json()) // Parse the JSON response
                 .then(data =>
                 {
                     const questionDiv = document.getElementById('question');
                     questionDiv.innerHTML = ''; // Clear previous content
 
+                    // Iterate through the fetched questions (assuming an array)
                     data.forEach(questionData =>
                     {
                         // Display the question
@@ -57,42 +69,45 @@
                         questionElement.textContent = questionData.question;
                         questionDiv.appendChild(questionElement);
 
-                        // Display the answers
+                        // Display the answers as buttons
                         questionData.answers.forEach(answer =>
                         {
                             const button = document.createElement('button');
                             button.textContent = answer;
+
+                            // Handle button click to check the answer
                             button.onclick = () =>
                             {
                                 if (answer === questionData.correctAnswer)
                                 {
-                                    button.style.backgroundColor = 'green';
+                                    button.style.backgroundColor = 'green'; // Correct answer
                                 } else
                                 {
-                                    button.style.backgroundColor = 'red';
+                                    button.style.backgroundColor = 'red'; // Incorrect answer
                                 }
 
                                 // Disable all buttons after an answer is selected
                                 const buttons = questionDiv.querySelectorAll('button');
                                 buttons.forEach(btn =>
                                 {
-                                    btn.disabled = true;
+                                    btn.disabled = true; // Disable button
                                     if (btn.textContent === questionData.correctAnswer)
                                     {
-                                        btn.style.backgroundColor = 'green';
+                                        btn.style.backgroundColor = 'green'; // Highlight correct answer
                                     } else if (btn !== button)
                                     {
-                                        btn.style.backgroundColor = 'red';
+                                        btn.style.backgroundColor = 'red'; // Highlight incorrect answers
                                     }
                                 });
                             };
-                            questionDiv.appendChild(button);
+                            questionDiv.appendChild(button); // Add button to the question div
                         });
                     });
                 })
-                .catch(error => console.error('Error fetching question:', error));
+                .catch(error => console.error('Error fetching question:', error)); // Log errors
         }
 
+        // Fetch categories when the page loads
         window.onload = fetchCategories;
     </script>
 </body>

@@ -1,58 +1,67 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+// Import required modules
+const express = require('express'); // Web framework for Node.js
+const mongoose = require('mongoose'); // MongoDB object modeling tool
+const path = require('path'); // Utility for working with file and directory paths
+const swaggerUi = require('swagger-ui-express'); // Middleware to serve Swagger UI
+const swaggerJsdoc = require('swagger-jsdoc'); // Tool to generate Swagger documentation
 
+// Initialize Express app and define the port
 const app = express();
 const PORT = 3200;
 
 // Middleware
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' directory
+app.use(express.json()); // Parse incoming JSON requests
 
-const connectWithRetry = async () => {
-    try {
+// Function to connect to MongoDB with retry logic
+const connectWithRetry = async () =>
+{
+    try
+    {
+        // Connect to MongoDB using Mongoose
         await mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin');
         console.log('Connected to MongoDB for Submit Service');
-    } catch (err) {
+    } catch (err)
+    {
         console.error('MongoDB connection error:', err);
         console.log('Retrying connection in 5 seconds...');
-        setTimeout(connectWithRetry, 5000);
+        setTimeout(connectWithRetry, 5000); // Retry connection after 5 seconds
     }
 };
 
+// Establish MongoDB connection
 connectWithRetry();
 
-// Define Mongoose schema and model
+// Define Mongoose schema and model for quiz questions
 const questionSchema = new mongoose.Schema({
-    question: { type: String, required: true },
-    answers: [
+    question: { type: String, required: true }, // Question text
+    answers: [ // Array of answer objects
         {
-            text: { type: String, required: true },
-            isCorrect: { type: Boolean, required: true }
+            text: { type: String, required: true }, // Answer text
+            isCorrect: { type: Boolean, required: true } // Whether the answer is correct
         }
     ],
-    category: { type: String, required: true }
+    category: { type: String, required: true } // Category of the question
 });
 
+// Create a Mongoose model for the questions
 const Question = mongoose.model('Question', questionSchema);
 
-// Swagger Documentation
+// Swagger Documentation setup
 const swaggerOptions = {
     definition: {
-        openapi: "3.0.0",
+        openapi: "3.0.0", // OpenAPI version
         info: {
-            title: "Quiz API - Submit Service",
-            version: "1.0.0",
-            description: "API for submitting quiz questions and retrieving categories",
+            title: "Quiz API - Submit Service", // API title
+            version: "1.0.0", // API version
+            description: "API for submitting quiz questions and retrieving categories", // API description
         },
-        servers: [{ url: "http://localhost:3200", description: "Local server" }]
+        servers: [{ url: "http://localhost:3200", description: "Local server" }] // Server information
     },
-    apis: ["./submit_server.js"]
+    apis: ["./submit_server.js"] // Path to API documentation
 };
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const swaggerDocs = swaggerJsdoc(swaggerOptions); // Generate Swagger documentation
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI at /docs
 
 /**
  * @swagger
@@ -70,16 +79,17 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
  *               items:
  *                 type: string
  */
+// Endpoint to fetch all unique categories
 app.get('/categories', async (req, res) =>
 {
     try
     {
-        const categories = await Question.distinct('category');
-        res.json(categories);
+        const categories = await Question.distinct('category'); // Fetch unique categories from the database
+        res.json(categories); // Send categories as JSON response
     } catch (error)
     {
         console.error("Failed to fetch categories:", error);
-        res.status(500).json({ error: 'Failed to fetch categories' });
+        res.status(500).json({ error: 'Failed to fetch categories' }); // Handle errors
     }
 });
 
@@ -119,9 +129,10 @@ app.get('/categories', async (req, res) =>
  *       500:
  *         description: Internal server error
  */
+// Endpoint to submit a new quiz question
 app.post('/submit', async (req, res) =>
 {
-    const { question, answers, category, newCategory } = req.body;
+    const { question, answers, category, newCategory } = req.body; // Extract data from request body
 
     console.log("Incoming Submission:", { question, answers, category, newCategory });
 
@@ -140,12 +151,13 @@ app.post('/submit', async (req, res) =>
         return res.status(400).json({ error: 'Please select exactly one correct answer.' });
     }
 
-    // Ensure answers remain as objects (text + isCorrect) and not strings
+    // Format answers to ensure they remain objects with text and isCorrect properties
     const formattedAnswers = answers.map(ans => ({
         text: ans.text,
         isCorrect: ans.isCorrect
     }));
 
+    // Determine the category to use (newCategory takes precedence if provided)
     const chosenCategory = newCategory.trim() !== '' ? newCategory : category;
 
     console.log("Prepared for DB Save:", { question, formattedAnswers, category: chosenCategory });
@@ -155,39 +167,41 @@ app.post('/submit', async (req, res) =>
         // Prevent duplicate categories
         if (newCategory)
         {
-            const existingCategories = await Question.distinct('category');
+            const existingCategories = await Question.distinct('category'); // Fetch existing categories
             if (existingCategories.includes(newCategory))
             {
                 console.log("Category already exists. Using existing category.");
             }
         }
 
+        // Create a new question document
         const newQuestion = new Question({
             question,
             answers: formattedAnswers,
             category: chosenCategory
         });
 
-        // Save to database
+        // Save the question to the database
         const savedQuestion = await newQuestion.save();
         console.log("Successfully Saved to DB:", savedQuestion);
 
+        // Send success response
         res.json({ message: 'Question submitted successfully!', savedQuestion });
 
     } catch (error)
     {
         console.error("Database Error:", error);
-        res.status(500).json({ error: 'Failed to submit question' });
+        res.status(500).json({ error: 'Failed to submit question' }); // Handle database errors
     }
 });
 
-// Serve the submit.html file
+// Serve the submit.html file for the root route
 app.get('/', (req, res) =>
 {
-    res.sendFile(path.join(__dirname, 'public', 'submit.html'));
+    res.sendFile(path.join(__dirname, 'public', 'submit.html')); // Serve the HTML file
 });
 
-// Start the server
+// Start the server and listen on the defined port
 app.listen(PORT, () =>
 {
     console.log(`Submit Service running at http://localhost:${PORT}`);
