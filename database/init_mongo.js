@@ -271,4 +271,4 @@ db.questions.insertMany([
     }
 ]);
 
-print("✅ Database seeded successfully with new question format!");
+print("Database seeded successfully with new question format!");
