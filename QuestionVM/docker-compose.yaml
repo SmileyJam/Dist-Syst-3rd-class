@@ -1,0 +1,53 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: my_mongo_db
+    ports:
+      - "4002:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
+    environment:
+      MONGO_INITDB_DATABASE: quiz_db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - app-network
+
+  question_service:
+    image: smileyjam/question_service:3rdClass
+    container_name: question_service
+    ports:
+      - "4000:3000"
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
+  etl_service:
+    build:
+      context: ./ETL
+      dockerfile: dockerfile
+    container_name: etl_service
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+      - mongodb
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

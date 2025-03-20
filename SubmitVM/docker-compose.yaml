@@ -1,0 +1,30 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # RabbitMQ messaging port
+      - "15672:15672"  # RabbitMQ management console
+    networks:
+      - app-network
+
+  submit_service:
+    image: smileyjam/submit_service:3rdClass
+    container_name: submit_service
+    ports:
+      - "4200:3200"
+    volumes:
+      - ./submit_service:/app
+      - categories_cache:/app/cache  # Add a volume for category caching
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+
+volumes:
+  categories_cache:  # Volume for caching categories
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
