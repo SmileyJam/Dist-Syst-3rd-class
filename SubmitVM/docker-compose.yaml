@@ -9,7 +9,10 @@ services:
       - app-network
 
   submit_service:
-    image: smileyjam/submit_service:3rdClass
+    #image: smileyjam/submit_service:3rdClass
+    build:
+      context: ./submit_service
+      dockerfile: Dockerfile
     container_name: submit_service
     ports:
       - "4200:3200"

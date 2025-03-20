@@ -15,7 +15,10 @@ services:
       - app-network
 
   question_service:
-    image: smileyjam/question_service:3rdClass
+    #image: smileyjam/question_service:3rdClass
+    build:
+      context: ./QuestionService
+      dockerfile: Dockerfile
     container_name: question_service
     ports:
       - "4000:3000"
