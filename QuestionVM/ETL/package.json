@@ -1,0 +1,16 @@
+{
+    "name": "etl_service",
+    "version": "1.0.0",
+    "description": "ETL service that consumes questions from RabbitMQ and stores them in MongoDB",
+    "main": "etl_server.js",
+    "scripts": {
+        "start": "node etl_server.js"
+    },
+    "author": "Your Name",
+    "license": "ISC",
+    "dependencies": {
+        "amqplib": "^0.10.3",
+        "mongoose": "^8.12.1",
+        "dotenv": "^16.3.1"
+    }
+}

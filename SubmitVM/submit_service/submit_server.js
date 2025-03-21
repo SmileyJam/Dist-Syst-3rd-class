@@ -5,6 +5,8 @@ const path = require('path'); // Utility for working with file and directory pat
 const swaggerUi = require('swagger-ui-express'); // Middleware to serve Swagger UI
 const swaggerJsdoc = require('swagger-jsdoc'); // Tool to generate Swagger documentation
 const amqp = require('amqplib'); // RabbitMQ library for Node.js
+const fs = require('fs-extra');
+const CACHE_PATH = path.join(__dirname, 'cache', 'categories.json');
 
 // Initialize Express app and define the port
 const app = express();
@@ -95,15 +97,32 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagge
  *                 type: string
  */
 // Endpoint to fetch all unique categories
-app.get('/categories', async (req, res) => {
-    try {
-        const categories = await Question.distinct('category'); // Fetch unique categories from the database
-        res.json(categories); // Send categories as JSON response
-    } catch (error) {
-        console.error("Failed to fetch categories:", error);
-        res.status(500).json({ error: 'Failed to fetch categories' }); // Handle errors
+app.get('/categories', async (req, res) =>
+{
+    try
+    {
+        const response = await fetch('http://question_service:3000/categories');
+        const categories = await response.json();
+
+        await fs.ensureDir(path.join(__dirname, 'cache'));
+        await fs.writeJson(CACHE_PATH, categories);
+
+        res.json(categories);
+    } catch (error)
+    {
+        console.warn('Falling back to cache:', error.message);
+        try
+        {
+            const fallback = await fs.readJson(CACHE_PATH);
+            res.json(fallback);
+        } catch (fallbackErr)
+        {
+            console.error('Cache unavailable:', fallbackErr.message);
+            res.status(500).json({ error: 'Cannot retrieve categories' });
+        }
     }
 });
+
 
 /**
  * @swagger

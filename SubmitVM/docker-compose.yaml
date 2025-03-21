@@ -1,33 +1,43 @@
+version: '3.8'
 services:
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"  # RabbitMQ messaging port
-      - "15672:15672"  # RabbitMQ management console
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
     networks:
-      - app-network
+      - frontend
 
   submit_service:
-    #image: smileyjam/submit_service:3rdClass
-    build:
-      context: ./submit_service
-      dockerfile: Dockerfile
+    image: smileyjam/submit_service:latest2nd
+    #build:
+      #context: ./submit_service
     container_name: submit_service
     ports:
       - "4200:3200"
     volumes:
       - ./submit_service:/app
-      - categories_cache:/app/cache  # Add a volume for category caching
-    networks:
-      - app-network
+      - categories_cache:/app/cache
+    environment:
+      RMQ_HOST: rabbitmq
+      RMQ_USER: admin
+      RMQ_PASS: admin
+      QUESTION_SERVICE_URL: http://172.187.146.28:4000
     depends_on:
       - rabbitmq
+    networks:
+      - frontend
 
 volumes:
-  categories_cache:  # Volume for caching categories
-    driver: local
+  rabbit_data:
+  categories_cache:
 
 networks:
-  app-network:
+  frontend:
     driver: bridge

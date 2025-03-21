@@ -1,56 +1,49 @@
+version: '3.8'
 services:
   mongodb:
     image: mongo:latest
-    container_name: my_mongo_db
+    container_name: mongodb
     ports:
-      - "4002:27017"
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
       - ./database/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
     environment:
-      MONGO_INITDB_DATABASE: quiz_db
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: quiz_db
     networks:
-      - app-network
+      - backend
 
   question_service:
-    #image: smileyjam/question_service:3rdClass
-    build:
-      context: ./QuestionService
-      dockerfile: Dockerfile
+    image: smileyjam/question_service:latest2nd
+    #build:
+      #context: ./question_service
     container_name: question_service
     ports:
       - "4000:3000"
-    networks:
-      - app-network
     depends_on:
       - mongodb
-
-  rabbitmq:
-    image: rabbitmq:management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
-      - app-network
+      - backend
 
   etl_service:
-    build:
-      context: ./ETL
-      dockerfile: dockerfile
+    image: smileyjam/etl:latest2nd
+    #build:
+      #context: ./ETL
     container_name: etl_service
-    networks:
-      - app-network
+    environment:
+      RMQ_HOST: 172.187.147.29
+      RMQ_USER: admin
+      RMQ_PASS: admin
     depends_on:
-      - rabbitmq
       - mongodb
+    networks:
+      - backend
 
 volumes:
   mongodb_data:
-    driver: local
 
 networks:
-  app-network:
+  backend:
     driver: bridge

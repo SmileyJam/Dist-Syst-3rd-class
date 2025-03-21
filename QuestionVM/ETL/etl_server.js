@@ -1,40 +1,73 @@
 const amqp = require('amqplib');
 const mongoose = require('mongoose');
 
-// MongoDB connection
-mongoose.connect('mongodb://my_mongo_db:27017/quiz_db', {
+const RMQ_HOST = process.env.RMQ_HOST || 'rabbitmq';
+const RMQ_USER = process.env.RMQ_USER || 'admin';
+const RMQ_PASS = process.env.RMQ_PASS || 'admin';
+const QUEUE_NAME = 'SUBMITTED_QUESTIONS';
+
+let connection, channel;
+
+// MongoDB setup
+mongoose.connect('mongodb://admin:password@mongodb:27017/quiz_db?authSource=admin', {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+  useUnifiedTopology: true
+}).then(() => console.log('Connected to MongoDB'))
+  .catch(err =>
+  {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
-const Question = mongoose.model('Question', {
-  category: String,
+const questionSchema = new mongoose.Schema({
   question: String,
-  answers: [String],
-  correctAnswer: String,
+  answers: [
+    { text: String, isCorrect: Boolean }
+  ],
+  category: String
 });
+const Question = mongoose.model('Question', questionSchema);
 
-async function startETL() {
-  const connection = await amqp.connect('amqp://rabbitmq');
-  const channel = await connection.createChannel();
-  const queue = 'SUBMITTED_QUESTIONS';
+async function connectToQueue()
+{
+  const uri = `amqp://${RMQ_USER}:${RMQ_PASS}@${RMQ_HOST}:5672/`;
+  try
+  {
+    connection = await amqp.connect(uri);
+    channel = await connection.createChannel();
+    await channel.assertQueue(QUEUE_NAME, { durable: true });
+    console.log(`ETL connected to RabbitMQ at ${RMQ_HOST} on queue "${QUEUE_NAME}"`);
+    listenForMessages();
+  } catch (error)
+  {
+    console.error('RabbitMQ connection failed:', error);
+    process.exit(1);
+  }
+}
 
-  await channel.assertQueue(queue, { durable: true });
+function listenForMessages()
+{
+  channel.consume(QUEUE_NAME, async (msg) =>
+  {
+    if (msg !== null)
+    {
+      try
+      {
+        const data = JSON.parse(msg.content.toString());
+        console.log('Received from queue:', data);
 
-  console.log('Waiting for messages in %s...', queue);
+        const { question, category, answers } = data;
 
-  channel.consume(queue, async (msg) => {
-    if (msg !== null) {
-      const data = JSON.parse(msg.content.toString());
-      console.log('Received:', data);
+        await Question.create({ question, category, answers });
 
-      // Transform and load into MongoDB
-      const { category, question, answers, correctAnswer } = data;
-      await Question.create({ category, question, answers, correctAnswer });
-
-      channel.ack(msg);
+        channel.ack(msg);
+      } catch (err)
+      {
+        console.error('Failed to insert into MongoDB:', err);
+        channel.nack(msg); // Retry if needed
+      }
     }
   });
 }
 
-startETL().catch(console.error);
+connectToQueue();
